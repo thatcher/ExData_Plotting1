@@ -22,7 +22,7 @@ if( !file.exists(data_file) ){
 # dumps a bunch of noisy warnings.  we dont care, we just want fast and quiet
 # and will deal with the types later
 household_power_consumption = suppressWarnings( fread(
-    "household_power_consumption.txt",
+    data_file,
     na.strings="?"
 ))
 
