@@ -1,61 +1,28 @@
 # Homework assignment for Coursera exdata-011
 # Week 1
 # plot1.R
-# Chris Thatcher
-library(data.table)
-library(lubridate)
+# See etl.R for the data extract/transform/load routines.  We consolidated
+# them into one file so each of the plots  can leverage the same process
+# without duplicating the code.  This saves a lot of time during
+# development since we arent reloading the data to develop the graph.
 
-# Expects the data is available in `getwd()` as household_power_consumption.txt
-# Make sure we have the data to work with locally, otherwise go get it.
-data_file = "household_power_consumption.txt"
-data_zip = "household_power_consumption.zip"
-data_url = "https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2Fhousehold_power_consumption.zip"
-if( !file.exists(data_file) ){
-    message("Data not present, loading from url.")
-    download.file(data_url, destfile=data_zip, method="curl")
-    unzip(data_zip)
-    file.remove(data_zip)
-}
+source('etl.R')
 
-# fread is fast but its going to force every column to be a character because
-# it can only coerse columns with NA's to character during the ingest.  It also
-# dumps a bunch of noisy warnings.  we dont care, we just want fast and quiet
-# and will deal with the types later
-household_power_consumption = suppressWarnings( fread(
-    data_file,
-    na.strings="?"
-))
-
-# convert the Date field to a, uh, Date
-household_power_consumption$Date = parse_date_time(
-    household_power_consumption$Date, 
-    "%d%m%y"
-)
-
-# convert the Time field to a, uh, Time
-household_power_consumption$Time = parse_date_time(
-    household_power_consumption$Time, 
-    "%H%M%S"
-)
-
-
-# We will only be using data from the dates 2007-02-01 and 2007-02-02. 
-time_slice = subset(
-    household_power_consumption,
-    household_power_consumption$Date >= parse_date_time("2007-02-01", "ymd") &
-        household_power_consumption$Date < parse_date_time("2007-02-03", "ymd")
-)
+power_data = etl.load()
 
 # Finally construct the plot
-with(time_slice, {
+with(power_data, {
+
+    # open the png for writing but make sure we close it even in the
+    # event of an error.
     png('plot1.png')
-    hist( 
-        as.numeric(Global_active_power), 
+
+    tryCatch( hist(
+        as.numeric(Global_active_power),
         main="Global Active Power",
         xlab="Global Active Power (kilowatts)",
         col="red"
-    );
-    dev.off()
-});
+    ), finally=dev.off())
 
+})
 
